@@ -2,8 +2,10 @@ import pygame
 from settings import *
 from support import import_folder
 from math import sin
+
+
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surface, create_jump_particles, change_health) -> None:
+    def __init__(self, pos, surface, create_jump_particles, change_health, change_stamina) -> None:
         super().__init__()
         self.import_character_assets()
         
@@ -18,14 +20,20 @@ class Player(pygame.sprite.Sprite):
         self.dust_animation_speed = 0.33
         self.display_surface = surface
         self.create_jump_particles = create_jump_particles  
-        
+        #self.current_stamina = current_stamina
         #movement
         self.direction = pygame.math.Vector2(0,0)
-        self.speed = 8
+        self.walking_speed = 4
         self.gravity = 0.8
         self.jump_speed = -24 
         self.collision_rect = pygame.Rect(self.rect.topleft, (50,self.rect.h))
-
+        self.running_speed = 8
+        self.movement_status = "walking"
+        
+        
+        
+        
+        
         #status
         self.status = "idle"
         self.facing_right = True
@@ -36,6 +44,7 @@ class Player(pygame.sprite.Sprite):
         
         #health management
         self.change_health = change_health
+        self.change_stamina = change_stamina
         self.invincible_bool = False
         self.invincible_ms = 400
         self.hurt_moment = 0
@@ -101,18 +110,27 @@ class Player(pygame.sprite.Sprite):
                 self.display_surface.blit(flipped_dust_particle, pos) 
                 
             
-    def get_input(self):
+    def get_input(self, able_stamina_consume):
         
         keys = pygame.key.get_pressed()
         
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_LSHIFT] and able_stamina_consume:
+            self.movement_status = "running"
+            
+        else:
+            self.movement_status = "walking"
+            
+            
+        if keys[pygame.K_RIGHT] :
             self.direction.x = 1
             self.facing_right = True
-        elif keys[pygame.K_LEFT]:
+        elif keys[pygame.K_LEFT] :
             self.direction.x = -1
             self.facing_right = False
         else:
             self.direction.x = 0
+        
+        
         
         if keys[pygame.K_UP] and self.on_ground:
             self.jump()
@@ -145,10 +163,9 @@ class Player(pygame.sprite.Sprite):
     def get_damaged (self):
         if not self.invincible_bool:
             self.hit_sound.play()
-            self.change_health(-10)
+            self.change_health(-30)
             self.invincible_bool = True
             self.hurt_moment = pygame.time.get_ticks()        
-            
             
     def invincibility_timer(self):
         if self.invincible_bool:
@@ -156,8 +173,16 @@ class Player(pygame.sprite.Sprite):
             if current_time - self.hurt_moment >= self.invincible_ms:
                 self.invincible_bool = False
     
+    
+    def consume_stamina(self):
+        if self.movement_status == "running":
+            self.change_stamina(-0.5)
+   
+    def regenerate_stamina(self):
+    
+            self.change_stamina(0.3)
+            
     def wave_value(self):
-        
         value = sin((pygame.time.get_ticks()) / 10)
         if value >= 0:
             return 255
@@ -165,11 +190,13 @@ class Player(pygame.sprite.Sprite):
             return 0
         
                
-    def update(self):
-        self.get_input()
+    def update(self, able_stamina_consume):
+       
+        self.get_input(able_stamina_consume)
         self.get_status()
         
         self.animate()
         self.run_dust_animation()
         self.invincibility_timer()
+        
         self.wave_value()

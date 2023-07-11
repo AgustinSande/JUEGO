@@ -7,8 +7,15 @@ class Enemy(AnimatedTile):
         super().__init__(size, x, y, ".//JUEGO 2//graphics//enemy//run")
         self.rect.y += size - self.image.get_size()[1]
         self.speed = randint(2,4)
+        self.direction = "right"
+        
+        
     def move(self):
-        self.rect.x += self.speed
+        if self.direction == "right":
+            
+            self.rect.x += self.speed
+        else:
+            self.rect.x -= self.speed
         
     def reverse_image(self):
         if self.speed > 0:
@@ -17,7 +24,8 @@ class Enemy(AnimatedTile):
             
     def reverse_speed(self):
         self.speed *= -1
-        
+
+          
     def update(self, shift):
         self.rect.x += shift
         self.animate()
